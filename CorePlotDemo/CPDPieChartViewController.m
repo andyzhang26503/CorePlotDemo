@@ -32,6 +32,8 @@
 }
 
 - (IBAction)themeTapped:(id)sender {
+    UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:@"Apply a Theme" delegate:self cancelButtonTitle:@"Cancel" destructiveButtonTitle:nil otherButtonTitles:CPDThemeNameDarkGradient,CPDThemeNamePlainBlack,CPDThemeNamePlainWhite,CPDThemeNameSlate,CPDThemeNameStocks, nil];
+    [actionSheet showFromTabBar:self.tabBarController.tabBar];
 }
 
 - (void) initPlot
@@ -92,17 +94,29 @@
     //create gradient
     CPTGradient *overlayGradient = [[CPTGradient alloc] init];
     overlayGradient.gradientType = CPTGradientTypeRadial;
-    overlayGradient = [overlayGradient addColorStop:[[CPTColor blackColor] colorWithAlphaComponent:0.0] atPosition:0.9];
+    overlayGradient = [overlayGradient addColorStop:[[CPTColor blackColor] colorWithAlphaComponent:0.0] atPosition:0.8];
     overlayGradient = [overlayGradient addColorStop:[[CPTColor blackColor] colorWithAlphaComponent:0.4] atPosition:1.0];
     pieChart.overlayFill = [CPTFill fillWithGradient:overlayGradient];
     
     //add chart to graph
     [graph addPlot:pieChart];
-    
+
 }
 - (void)configureLegend
 {
+    CPTGraph *graph = self.hostView.hostedGraph;
+    CPTLegend *theLegend = [CPTLegend legendWithGraph:graph];
     
+    theLegend.numberOfColumns = 1;
+    theLegend.fill = [CPTFill fillWithColor:[CPTColor whiteColor]];
+    theLegend.borderLineStyle = [CPTLineStyle lineStyle];
+    theLegend.cornerRadius = 5.0;
+    
+    graph.legend = theLegend;
+    graph.legendAnchor = CPTRectAnchorRight;
+    CGFloat legendPadding = -(self.view.bounds.size.width/8);
+    graph.legendDisplacement = CGPointMake(legendPadding, 0.0);
+
 }
 #pragma mark - CPTPlotDataSource methods
 - (NSUInteger)numberOfRecordsForPlot:(CPTPlot *)plot
@@ -120,18 +134,50 @@
 
 - (CPTLayer *)dataLabelForPlot:(CPTPlot *)plot recordIndex:(NSUInteger)idx
 {
-    return nil;
+    static CPTMutableTextStyle *labelText = nil;
+    if (!labelText) {
+        labelText = [[CPTMutableTextStyle alloc] init];
+        labelText.color = [CPTColor grayColor];
+    }
+    
+    NSDecimalNumber *portfolioSum = [NSDecimalNumber zero];
+    for (NSDecimalNumber *price in [[CPDStockPriceStore sharedInstance] dailyPortfolioPrices]) {
+        portfolioSum = [portfolioSum decimalNumberByAdding:price];
+    }
+    
+    NSDecimalNumber *price = [[[CPDStockPriceStore sharedInstance] dailyPortfolioPrices] objectAtIndex:idx];
+    NSDecimalNumber *percent = [price decimalNumberByDividingBy:portfolioSum];
+    
+    NSString *labelValue = [NSString stringWithFormat:@"$%0.2f USD (%0.1f %%)",[price floatValue],([percent floatValue]*100.0f)];
+    
+    return [[CPTTextLayer alloc] initWithText:labelValue style:labelText];
 }
 
 - (NSString *)legendTitleForPieChart:(CPTPieChart *)pieChart recordIndex:(NSUInteger)idx
 {
-    return @"";
+    if (idx < [[[CPDStockPriceStore sharedInstance] tickerSymbols] count]) {
+        return [[[CPDStockPriceStore sharedInstance] tickerSymbols] objectAtIndex:idx];
+    }
+    return @"N/A";
 }
 
 #pragma mark - UIActionSheetDelegate methods
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
 {
+    NSString *title = [actionSheet buttonTitleAtIndex:buttonIndex];
+    NSString *themeName = kCPTPlainWhiteTheme;
+    if ([title isEqualToString:CPDThemeNameDarkGradient]) {
+        themeName = kCPTDarkGradientTheme;
+    }else if([title isEqualToString:CPDThemeNamePlainBlack]){
+        themeName = kCPTPlainBlackTheme;
+    }else if([title isEqualToString:CPDThemeNamePlainWhite]){
+        themeName = kCPTPlainWhiteTheme;
+    }else if([title isEqualToString:CPDThemeNameSlate]){
+        themeName = kCPTSlateTheme;
+    }else if([title isEqualToString:CPDThemeNameStocks]){
+        themeName = kCPTStocksTheme;
+    }
     
+    [self.hostView.hostedGraph applyTheme:[CPTTheme themeNamed:themeName]];
 }
-
 @end
