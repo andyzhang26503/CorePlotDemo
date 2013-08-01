@@ -29,10 +29,54 @@
 	// Do any additional setup after loading the view.
 }
 
+- (void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+    [self initPlot];
+}
+
+- (void)initPlot
+{
+    [self configureHost];
+    [self configureGraph];
+    [self configurePlots];
+    [self configureAxes];
+}
+
+- (void)configureHost
+{
+    
+}
+
+- (void)configureGraph
+{
+    
+}
+
+- (void)configurePlots
+{
+    
+}
+
+- (void)configureAxes
+{
+    
+}
+
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
 
+#pragma mark - CPTPlotDataSource methods
+- (NSUInteger)numberOfRecordsForPlot:(CPTPlot *)plot
+{
+    return 0;
+}
+
+- (NSNumber *)numberForPlot:(CPTPlot *)plot field:(NSUInteger)fieldEnum recordIndex:(NSUInteger)idx
+{
+    return [NSDecimalNumber zero];
+}
 @end
