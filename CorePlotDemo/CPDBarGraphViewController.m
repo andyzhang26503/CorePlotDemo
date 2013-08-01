@@ -96,32 +96,35 @@ CGFloat const CPDBarInitialX = 0.25f;
 
 - (void)configureAxes
 {
-//    CPTMutableTextStyle *axisTitleStyle = [CPTMutableTextStyle textStyle];
-//    axisTitleStyle.color = [CPTColor whiteColor];
-//    axisTitleStyle.fontName = @"Helvetica-Bold";
-//    axisTitleStyle.fontSize = 12.0f;
-//    
-//    CPTMutableLineStyle *axisLineStyle = [CPTMutableLineStyle lineStyle];
-//    axisLineStyle.lineWidth = 2.0f;
-//    axisLineStyle.lineColor = [[CPTColor whiteColor] colorWithAlphaComponent:1];
-//    
-//    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.hostView.hostedGraph.axisSet;
-//    axisSet.xAxis.labelingPolicy = CPTAxisLabelingPolicyNone;
-//    axisSet.xAxis.title = @"Days of Week (Mon -Fri)";
-//    axisSet.xAxis.titleTextStyle = axisTitleStyle;
-//    axisSet.xAxis.titleOffset = 10.0f;
-//    axisSet.xAxis.axisLineStyle = axisLineStyle;
-//    
-//    axisSet.yAxis.labelingPolicy = CPTAxisLabelingPolicyNone;
-//    axisSet.yAxis.title = @"Price";
-//    axisSet.yAxis.titleTextStyle = axisTitleStyle;
-//    axisSet.yAxis.titleOffset = 5.0f;
-//    axisSet.yAxis.axisLineStyle = axisLineStyle;
+    CPTMutableTextStyle *axisTitleStyle = [CPTMutableTextStyle textStyle];
+    axisTitleStyle.color = [CPTColor whiteColor];
+    axisTitleStyle.fontName = @"Helvetica-Bold";
+    axisTitleStyle.fontSize = 12.0f;
+    
+    CPTMutableLineStyle *axisLineStyle = [CPTMutableLineStyle lineStyle];
+    axisLineStyle.lineWidth = 2.0f;
+    axisLineStyle.lineColor = [[CPTColor whiteColor] colorWithAlphaComponent:1];
+    
+    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.hostView.hostedGraph.axisSet;
+    axisSet.xAxis.labelingPolicy = CPTAxisLabelingPolicyNone;
+    axisSet.xAxis.title = @"Days of Week (Mon -Fri)";
+    axisSet.xAxis.titleTextStyle = axisTitleStyle;
+    axisSet.xAxis.titleOffset = 10.0f;
+    axisSet.xAxis.axisLineStyle = axisLineStyle;
+    
+    axisSet.yAxis.labelingPolicy = CPTAxisLabelingPolicyNone;
+    axisSet.yAxis.title = @"Price";
+    axisSet.yAxis.titleTextStyle = axisTitleStyle;
+    axisSet.yAxis.titleOffset = 5.0f;
+    axisSet.yAxis.axisLineStyle = axisLineStyle;
 }
 
 - (void)hideAnnotation:(CPTGraph *)graph
 {
-    
+    if ((graph.plotAreaFrame.plotArea) &&(self.priceAnnotation)) {
+        [graph.plotAreaFrame.plotArea removeAnnotation:self.priceAnnotation];
+        self.priceAnnotation = nil;
+    }
 }
 - (void)didReceiveMemoryWarning
 {
@@ -137,7 +140,9 @@ CGFloat const CPDBarInitialX = 0.25f;
 
 - (NSNumber *)numberForPlot:(CPTPlot *)plot field:(NSUInteger)fieldEnum recordIndex:(NSUInteger)idx
 {
+    NSLog(@"into numberForPlot11111");
     if ((fieldEnum ==CPTBarPlotFieldBarTip)&&(idx < [[[CPDStockPriceStore sharedInstance] datesInWeek] count])) {
+        NSLog(@"into numberForPlot2222");
         if ([plot.identifier isEqual:CPDTickerSymbolAAPL]) {
             return [[[CPDStockPriceStore sharedInstance] weeklyPrices:CPDTickerSymbolAAPL] objectAtIndex:idx];
         }else if([plot.identifier isEqual:CPDTickerSymbolGOOG]){
@@ -152,16 +157,78 @@ CGFloat const CPDBarInitialX = 0.25f;
 #pragma mark - CPTBarPlotDelegate methods
 - (void)barPlot:(CPTBarPlot *)plot barWasSelectedAtRecordIndex:(NSUInteger)idx
 {
+    if (plot.isHidden == YES) {
+        return;
+    }
     
+    static CPTMutableTextStyle *style = nil;
+    if (!style) {
+        style = [CPTMutableTextStyle textStyle];
+        style.color = [CPTColor yellowColor];
+        style.fontSize = 16.0f;
+        style.fontName = @"Helvetica-Bold";
+    }
+    
+    NSNumber *price = [self numberForPlot:plot field:CPTBarPlotFieldBarTip recordIndex:idx];
+    if (!self.priceAnnotation) {
+        NSNumber *x = [NSNumber numberWithInt:0];
+        NSNumber *y = [NSNumber numberWithInt:0];
+        NSArray *anchorPoint = [NSArray arrayWithObjects:x,y, nil];
+        self.priceAnnotation = [[CPTPlotSpaceAnnotation alloc] initWithPlotSpace:plot.plotSpace anchorPlotPoint:anchorPoint];
+        
+    }
+    
+    static NSNumberFormatter *formatter = nil;
+    if (!formatter) {
+        formatter = [[NSNumberFormatter alloc] init];
+        [formatter setMaximumFractionDigits:2];
+    }
+    
+    NSString *priceValue = [formatter stringFromNumber:price];
+    CPTTextLayer *textLayer = [[CPTTextLayer alloc] initWithText:priceValue style:style];
+    self.priceAnnotation.contentLayer = textLayer;
+    
+    NSInteger plotIndex = 0;
+    if ([plot.identifier isEqual:CPDTickerSymbolAAPL]) {
+        plotIndex = 0;
+    }else if ([plot.identifier isEqual:CPDTickerSymbolGOOG]){
+        plotIndex = 1;
+    }else if ([plot.identifier isEqual:CPDTickerSymbolMSFT]){
+        plotIndex = 2;
+    }
+    CGFloat x = idx + CPDBarInitialX +(plotIndex * CPDBarWidth);
+    NSNumber *anchorX = [NSNumber numberWithFloat:x];
+    CGFloat y = [price floatValue] +40.0f;
+    NSNumber *anchorY = [NSNumber numberWithFloat:y];
+    
+    self.priceAnnotation.anchorPlotPoint = [NSArray arrayWithObjects:anchorX,anchorY, nil];
+    
+    [plot.graph.plotAreaFrame.plotArea addAnnotation:self.priceAnnotation];
 }
 
 
-- (IBAction)aaplSwitched:(id)sender {
+-(IBAction)aaplSwitched:(id)sender {
+    BOOL on = [((UISwitch *) sender) isOn];
+    if (!on) {
+        [self hideAnnotation:self.aaplPlot.graph];
+    }
+    [self.aaplPlot setHidden:!on];
 }
 
-- (IBAction)googSwitched:(id)sender {
+-(IBAction)googSwitched:(id)sender {
+    BOOL on = [((UISwitch *) sender) isOn];
+    if (!on) {
+        [self hideAnnotation:self.googPlot.graph];
+    }
+    [self.googPlot setHidden:!on];
 }
 
-- (IBAction)msftSwitched:(id)sender {
+-(IBAction)msftSwitched:(id)sender {
+    BOOL on = [((UISwitch *) sender) isOn];
+    if (!on) {
+        [self hideAnnotation:self.msftPlot.graph];
+    }
+    [self.msftPlot setHidden:!on];
 }
+
 @end
