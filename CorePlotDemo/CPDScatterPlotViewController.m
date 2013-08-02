@@ -45,16 +45,39 @@
 
 - (void)configureHost
 {
-    
+    self.hostView = [[CPTGraphHostingView alloc] initWithFrame:self.view.bounds];
+    self.hostView.allowPinchScaling = YES;
+    [self.view addSubview:self.hostView];
 }
 
 - (void)configureGraph
 {
+    CPTGraph *graph = [[CPTXYGraph alloc] initWithFrame:self.hostView.bounds];
+    [graph applyTheme:[CPTTheme themeNamed:kCPTDarkGradientTheme]];
+    self.hostView.hostedGraph = graph;
     
+    NSString *title = @"Portfolio Prices: April 2012";
+    graph.title = title;
+    
+    CPTMutableTextStyle *titleStyle = [CPTMutableTextStyle textStyle];
+    titleStyle.color = [CPTColor whiteColor];
+    titleStyle.fontName = @"Helvetica-Bold";
+    titleStyle.fontSize = 16.0f;
+    graph.titleTextStyle = titleStyle;
+    graph.titlePlotAreaFrameAnchor = CPTRectAnchorTop;
+    graph.titleDisplacement = CGPointMake(0.0f, 10.0f);
+    
+    [graph.plotAreaFrame setPaddingLeft:30.0f];
+    [graph.plotAreaFrame setPaddingBottom:30.0f];
+    
+    CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)graph.defaultPlotSpace;
+    plotSpace.allowsUserInteraction = YES;
 }
 
 - (void)configurePlots
 {
+    CPTGraph *graph = self.hostView.hostedGraph;
+    CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)graph.defaultPlotSpace;
     
 }
 

@@ -140,7 +140,7 @@ CGFloat const CPDBarInitialX = 0.25f;
 
 - (NSNumber *)numberForPlot:(CPTPlot *)plot field:(NSUInteger)fieldEnum recordIndex:(NSUInteger)idx
 {
-    NSLog(@"into numberForPlot11111");
+    NSLog(@"into numberForPlot11111,idx==%d",idx);
     if ((fieldEnum ==CPTBarPlotFieldBarTip)&&(idx < [[[CPDStockPriceStore sharedInstance] datesInWeek] count])) {
         NSLog(@"into numberForPlot2222");
         if ([plot.identifier isEqual:CPDTickerSymbolAAPL]) {
