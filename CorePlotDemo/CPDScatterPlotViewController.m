@@ -67,8 +67,8 @@
     graph.titlePlotAreaFrameAnchor = CPTRectAnchorTop;
     graph.titleDisplacement = CGPointMake(0.0f, 10.0f);
     
-    [graph.plotAreaFrame setPaddingLeft:30.0f];
-    [graph.plotAreaFrame setPaddingBottom:30.0f];
+    [graph.plotAreaFrame setPaddingLeft:10.0f];
+    [graph.plotAreaFrame setPaddingBottom:10.0f];
     
     CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)graph.defaultPlotSpace;
     plotSpace.allowsUserInteraction = YES;
@@ -223,6 +223,7 @@
             }
             [yMajorLocations addObject:[NSDecimalNumber decimalNumberWithDecimal:location]];
         } else {
+            //NSLog(@"mod!=0  CPTDecimalFromInteger(j)==%f",CPTDecimalFromInteger(j));
             [yMinorLocations addObject:[NSDecimalNumber decimalNumberWithDecimal:CPTDecimalFromInteger(j)]];
         }
     }
